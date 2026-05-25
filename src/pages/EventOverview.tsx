@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { MobileLayout } from '../components/MobileLayout';
 import { PassCard } from '../components/PassCard';
 import { useToast } from '../components/Toast';
 import { Event, Attendee } from '../types';
+import html2canvas from 'html2canvas';
 
 export function EventOverview() {
   const { id } = useParams<{ id: string }>();
@@ -20,11 +21,12 @@ export function EventOverview() {
   const [editTicket, setEditTicket] = useState('');
   const [regenerateId, setRegenerateId] = useState<string | null>(null);
   const [regeneratedIds, setRegeneratedIds] = useState<Set<string>>(new Set());
+  const [sendingPassId, setSendingPassId] = useState<string | null>(null);
+  const passRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (id) fetchData();
 
-    // Realtime subscription for attendee updates
     const channel = supabase
       .channel(`event-overview-${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'attendees', filter: `event_id=eq.${id}` },
@@ -81,6 +83,45 @@ export function EventOverview() {
     setRegeneratedIds(prev => new Set(prev).add(a.id));
     addToast(`New pass generated for ${a.name}. Old pass is now invalid.`, 'success');
     fetchData();
+  };
+
+  const sendSinglePass = async (a: Attendee) => {
+    if (!a.email) return;
+    setSendingPassId(a.id);
+    try {
+      const el = passRefs.current[a.id];
+      let pngBase64 = '';
+      if (el) {
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#FFFFFF' });
+        pngBase64 = canvas.toDataURL('image/png').split(',')[1];
+      }
+
+      const { error } = await supabase.functions.invoke('send-pass-email', {
+        body: {
+          action: 'send',
+          to: a.email,
+          attendeeName: a.name,
+          eventName: event?.name,
+          eventDate: event?.date,
+          eventTime: event?.time,
+          venue: event?.venue,
+          organiserName: event?.organiser_name,
+          pngBase64,
+          fileName: `${a.name.replace(/\s+/g, '-').toLowerCase()}-signet-pass.png`,
+        },
+      });
+
+      if (error) {
+        addToast('Failed to send pass. Please try again.', 'error');
+      } else {
+        await supabase.from('attendees').update({ pass_status: 'sent' }).eq('id', a.id);
+        addToast(`Pass sent to ${a.email}`, 'success');
+      }
+    } catch {
+      addToast('Failed to send pass. Please try again.', 'error');
+    } finally {
+      setSendingPassId(null);
+    }
   };
 
   const formatScanTime = (iso: string | null) => {
@@ -207,6 +248,12 @@ export function EventOverview() {
                       </span>
                       <span className="w-[15%] text-[13px] text-secondary">{formatScanTime(a.scanned_at)}</span>
                       <span className="w-[15%] flex justify-end gap-3">
+                        {a.email && (
+                          <button onClick={() => sendSinglePass(a)} disabled={sendingPassId === a.id}
+                            className="text-[13px] text-tertiary hover:text-primary transition-colors disabled:opacity-50">
+                            {sendingPassId === a.id ? 'Sending...' : 'Send Pass'}
+                          </button>
+                        )}
                         <button onClick={() => startEdit(a)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Edit</button>
                         <button onClick={() => setRegenerateId(a.id)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Regenerate</button>
                         {regeneratedIds.has(a.id) && (
@@ -230,6 +277,12 @@ export function EventOverview() {
                         {a.scanned_at && <span className="text-[13px] text-secondary">{formatScanTime(a.scanned_at)}</span>}
                       </div>
                       <div className="flex items-center gap-4">
+                        {a.email && (
+                          <button onClick={() => sendSinglePass(a)} disabled={sendingPassId === a.id}
+                            className="text-[13px] text-tertiary hover:text-primary transition-colors disabled:opacity-50">
+                            {sendingPassId === a.id ? 'Sending...' : 'Send Pass'}
+                          </button>
+                        )}
                         <button onClick={() => startEdit(a)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Edit</button>
                         <button onClick={() => setRegenerateId(a.id)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Regenerate</button>
                       </div>
@@ -258,8 +311,10 @@ export function EventOverview() {
         {activeTab === 'passes' && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {attendees.map(a => (
-              <div key={a.id} className="bg-white border border-border rounded-xl overflow-hidden hover:border-primary transition-colors duration-150">
-                <PassCard event={event} attendee={a} />
+              <div key={a.id} className="bg-white border border-border rounded-xl overflow-hidden hover:border-primary transition-colors duration-150 relative">
+                <div ref={el => { passRefs.current[a.id] = el; }}>
+                  <PassCard event={event} attendee={a} />
+                </div>
                 <div className="px-4 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-[13px] text-primary">{a.name}</p>
