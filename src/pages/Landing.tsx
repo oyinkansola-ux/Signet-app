@@ -54,27 +54,27 @@ export function Landing() {
 
           {/* Demo Pass */}
           <div className="mt-12 flex justify-center opacity-0 animate-stagger-4">
-            <div className="bg-white rounded-xl border border-border overflow-hidden max-w-[560px] w-full">
-              <div className="flex">
-                <div className="flex-1 min-w-0">
-                  <div className="px-5 py-3 bg-primary">
-                    <p className="font-serif-italic text-white text-lg">Lagos Tech Meetup Vol. 3</p>
+            <div className="bg-white overflow-hidden max-w-[560px] w-full" style={{ borderRadius: '12px', border: '1px solid #E4E3DF' }}>
+              <div className="flex flex-row">
+                <div className="flex flex-col" style={{ width: '60%' }}>
+                  <div className="bg-primary px-5 py-[14px]">
+                    <p className="font-serif-italic text-white text-left" style={{ fontSize: '17px' }}>Lagos Tech Meetup Vol. 3</p>
                   </div>
-                  <div className="px-5 py-4">
-                    <p className="text-[13px] text-secondary">May 30, 2026 &middot; 4:00 PM</p>
-                    <p className="text-[13px] text-secondary mt-1">The Hive, Victoria Island</p>
-                    <p className="text-[12px] text-tertiary mt-2">TechHub Lagos</p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <p className="font-medium text-base text-primary">Temi Adeyemi</p>
-                      <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full bg-amber text-primary">VIP</span>
+                  <div className="px-5 py-5 flex flex-col gap-1">
+                    <p className="text-left" style={{ fontSize: '13px', color: '#6B6B6B' }}>May 30, 2026 &middot; 4:00 PM</p>
+                    <p className="text-left" style={{ fontSize: '13px', color: '#6B6B6B' }}>The Hive, Victoria Island</p>
+                    <p className="text-left mb-4" style={{ fontSize: '12px', color: '#9A9A9A' }}>TechHub Lagos</p>
+                    <div className="flex flex-row items-center gap-2">
+                      <p className="font-medium text-left" style={{ fontSize: '16px', color: '#1C1C1E' }}>Temi Adeyemi</p>
+                      <span className="inline-flex items-center font-medium" style={{ fontSize: '12px', background: '#E8A020', color: '#1C1C1E', padding: '3px 10px', borderRadius: '100px' }}>VIP</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col items-center justify-center px-4 border-l border-dashed border-border">
-                  <div className="p-1.5 border-2 border-amber rounded-lg">
+                <div className="flex flex-col items-center justify-center" style={{ width: '40%', borderLeft: '1px dashed #E4E3DF', padding: '24px' }}>
+                  <div style={{ border: '2px solid #E8A020', padding: '4px', borderRadius: '4px' }}>
                     <QRCode value="demo-pass-0001" size={80} level="M" />
                   </div>
-                  <p className="text-[12px] text-tertiary mt-1.5">#0001</p>
+                  <p className="text-center mt-2" style={{ fontSize: '11px', color: '#9A9A9A' }}>#0001</p>
                 </div>
               </div>
             </div>
