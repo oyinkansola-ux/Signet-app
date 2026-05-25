@@ -347,16 +347,4 @@ id, attendee_id, event_id, scanned_at, result (valid/already_used/invalid)
 
 ## Demo Credentials
 
-**Test organiser account:**
-Email: temi@signet.app
-Password: Signet2026
-
-**Test event:** Lagos Tech Meetup Vol. 3
-**Attendees pre-loaded:** 5 (mix of General, VIP, Speaker)
-- Chidi Okonkwo — VIP — Checked In
-- Amara Nwosu — General — Checked In
-- Dami Adeleke — Speaker — Checked In
-- Kemi Balogun — General — Not Arrived
-- Seun Fashola — General — Not Arrived
-
 Any new account created through sign up works identically to the demo account.
