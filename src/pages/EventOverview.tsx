@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { MobileLayout } from '../components/MobileLayout';
 import { PassCard } from '../components/PassCard';
 import { useToast } from '../components/Toast';
+import { DeleteConfirmation } from '../components/DeleteConfirmation';
 import { Event, Attendee } from '../types';
 
 export function EventOverview() {
@@ -21,6 +22,9 @@ export function EventOverview() {
   const [regenerateId, setRegenerateId] = useState<string | null>(null);
   const [regeneratedIds, setRegeneratedIds] = useState<Set<string>>(new Set());
   const [sendingPassId, setSendingPassId] = useState<string | null>(null);
+  const [deleteAttendeeId, setDeleteAttendeeId] = useState<string | null>(null);
+  const [deleteEventOpen, setDeleteEventOpen] = useState(false);
+  const [deletingAttendeeId, setDeletingAttendeeId] = useState<string | null>(null);
   const passRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
@@ -98,11 +102,35 @@ export function EventOverview() {
     }
   };
 
+  const confirmDeleteAttendee = async () => {
+    const a = attendees.find(att => att.id === deleteAttendeeId);
+    if (!a) return;
+    setDeleteAttendeeId(null);
+    setDeletingAttendeeId(a.id);
+    setTimeout(async () => {
+      await supabase.from('attendees').delete().eq('id', a.id);
+      setAttendees(prev => prev.filter(att => att.id !== a.id));
+      setDeletingAttendeeId(null);
+      addToast(`${a.name} has been removed.`, 'info');
+    }, 200);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!event) return;
+    setDeleteEventOpen(false);
+    await supabase.from('attendees').delete().eq('event_id', event.id);
+    await supabase.from('events').delete().eq('id', event.id);
+    addToast('Event deleted.', 'info');
+    navigate('/dashboard');
+  };
+
   const formatScanTime = (iso: string | null) => {
     if (!iso) return '\u2014';
     const d = new Date(iso);
     return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
+
+  const deleteAttendee = attendees.find(a => a.id === deleteAttendeeId);
 
   if (loading) return <MobileLayout><p className="text-tertiary text-sm">Loading...</p></MobileLayout>;
   if (!event) return <MobileLayout><p className="text-secondary">Event not found.</p></MobileLayout>;
@@ -122,6 +150,13 @@ export function EventOverview() {
             <button onClick={() => navigate(`/create-event?edit=${event.id}`)}
               className="text-sm font-medium text-primary border-[1.5px] border-primary px-5 py-2 rounded-lg hover:bg-row-hover transition-colors duration-150">
               Edit Event
+            </button>
+            <button onClick={() => setDeleteEventOpen(true)}
+              className="text-sm font-medium border-[1.5px] rounded-lg transition-colors duration-150 px-5 py-2 md:w-auto w-full"
+              style={{ color: '#C0392B', borderColor: '#C0392B', background: 'transparent' }}
+              onMouseEnter={(e) => { (e.target as HTMLElement).style.background = '#FDF2F2'; }}
+              onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'transparent'; }}>
+              Delete Event
             </button>
           </div>
         </div>
@@ -185,7 +220,7 @@ export function EventOverview() {
               <span className="w-[15%] text-right">Actions</span>
             </div>
             {attendees.map(a => (
-              <div key={a.id}>
+              <div key={a.id} className={deletingAttendeeId === a.id ? 'animate-row-fade-out overflow-hidden' : ''}>
                 {editingId === a.id ? (
                   /* Edit Row */
                   <div className="bg-row-hover border-y border-primary py-3 flex flex-col md:flex-row md:items-center gap-2 md:gap-2">
@@ -233,6 +268,11 @@ export function EventOverview() {
                         {regeneratedIds.has(a.id) && (
                           <button className="text-[13px] text-success hover:underline transition-colors">Download New Pass</button>
                         )}
+                        <button onClick={() => setDeleteAttendeeId(a.id)}
+                          className="text-[13px] hover:underline transition-colors duration-150 cursor-pointer"
+                          style={{ color: '#C0392B' }}>
+                          Delete
+                        </button>
                       </span>
                     </div>
                     {/* Mobile Card */}
@@ -259,6 +299,11 @@ export function EventOverview() {
                         )}
                         <button onClick={() => startEdit(a)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Edit</button>
                         <button onClick={() => setRegenerateId(a.id)} className="text-[13px] text-tertiary hover:text-primary transition-colors">Regenerate</button>
+                        <button onClick={() => setDeleteAttendeeId(a.id)}
+                          className="text-[13px] hover:underline transition-colors duration-150 cursor-pointer"
+                          style={{ color: '#C0392B' }}>
+                          Delete
+                        </button>
                       </div>
                     </div>
                   </>
@@ -300,6 +345,26 @@ export function EventOverview() {
           </div>
         )}
       </div>
+
+      {/* Delete Attendee Confirmation */}
+      <DeleteConfirmation
+        open={!!deleteAttendeeId}
+        onClose={() => setDeleteAttendeeId(null)}
+        onConfirm={confirmDeleteAttendee}
+        title="Remove attendee?"
+        description={deleteAttendee ? `This will permanently remove ${deleteAttendee.name} and delete their pass. This cannot be undone.` : ''}
+        confirmLabel="Yes, Remove Attendee"
+      />
+
+      {/* Delete Event Confirmation */}
+      <DeleteConfirmation
+        open={deleteEventOpen}
+        onClose={() => setDeleteEventOpen(false)}
+        onConfirm={confirmDeleteEvent}
+        title="Delete this event?"
+        description={event ? `This will permanently delete ${event.name}, all attendees, and all generated passes. This cannot be undone.` : ''}
+        confirmLabel="Yes, Delete Event"
+      />
     </MobileLayout>
   );
 }

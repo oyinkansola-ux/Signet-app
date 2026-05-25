@@ -45,6 +45,13 @@ export default {
         'flood': 'flood 300ms ease-out forwards',
         'slide-up': 'slideUp 250ms ease-out forwards',
         'slide-down': 'slideDown 200ms ease-in forwards',
+        'overlay-in': 'overlayIn 200ms ease-out forwards',
+        'overlay-out': 'overlayOut 150ms ease-in forwards',
+        'dialog-in': 'dialogIn 200ms ease-out forwards',
+        'dialog-out': 'dialogOut 150ms ease-in forwards',
+        'sheet-in': 'sheetIn 250ms ease-out forwards',
+        'sheet-out': 'sheetOut 150ms ease-in forwards',
+        'row-fade-out': 'rowFadeOut 200ms ease-in forwards',
       },
       keyframes: {
         fadeIn: {
@@ -70,6 +77,34 @@ export default {
         slideDown: {
           '0%': { transform: 'translateY(0)' },
           '100%': { transform: 'translateY(100%)' },
+        },
+        overlayIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        overlayOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
+        },
+        dialogIn: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        dialogOut: {
+          '0%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(8px)' },
+        },
+        sheetIn: {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+        sheetOut: {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        rowFadeOut: {
+          '0%': { opacity: '1', transform: 'translateY(0)', maxHeight: '200px' },
+          '100%': { opacity: '0', transform: 'translateY(-8px)', maxHeight: '0', paddingTop: '0', paddingBottom: '0', marginTop: '0', marginBottom: '0' },
         },
       },
     },
