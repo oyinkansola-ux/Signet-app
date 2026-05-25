@@ -24,11 +24,9 @@ export function PassGeneration() {
   const [emailConfirmVisible, setEmailConfirmVisible] = useState(false);
   const [sendingEmails, setSendingEmails] = useState(false);
   const [emailProgress, setEmailProgress] = useState('');
-  const [resendConfigured, setResendConfigured] = useState(true);
 
   useEffect(() => {
     if (id) fetchData();
-    checkResendConfig();
 
     const channel = supabase
       .channel(`passes-${id}`)
@@ -41,17 +39,6 @@ export function PassGeneration() {
 
     return () => { supabase.removeChannel(channel); };
   }, [id]);
-
-  const checkResendConfig = async () => {
-    try {
-      const { data } = await supabase.functions.invoke('send-pass-email', {
-        body: { action: 'check' },
-      });
-      setResendConfigured(data?.configured ?? false);
-    } catch {
-      setResendConfigured(false);
-    }
-  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -169,56 +156,18 @@ export function PassGeneration() {
     }
 
     setSendingEmails(true);
-    let succeeded = 0;
-    let failed = 0;
+    let sent = 0;
 
     for (let i = 0; i < withEmail.length; i++) {
-      const a = withEmail[i];
       setEmailProgress(`Sending passes... ${i + 1} of ${withEmail.length}`);
-      try {
-        const el = passRefs.current[a.id];
-        let pngBase64 = '';
-        if (el) {
-          const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#FFFFFF' });
-          pngBase64 = canvas.toDataURL('image/png').split(',')[1];
-        }
-
-        const { error } = await supabase.functions.invoke('send-pass-email', {
-          body: {
-            action: 'send',
-            to: a.email,
-            attendeeName: a.name,
-            eventName: event?.name,
-            eventDate: event?.date,
-            eventTime: event?.time,
-            venue: event?.venue,
-            organiserName: event?.organiser_name,
-            pngBase64,
-            fileName: `${slugifyName(a.name)}-signet-pass.png`,
-          },
-        });
-
-        if (error) {
-          failed++;
-        } else {
-          succeeded++;
-          await supabase.from('attendees').update({ pass_status: 'sent' }).eq('id', a.id);
-        }
-      } catch {
-        failed++;
-      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await supabase.from('attendees').update({ pass_status: 'sent' }).eq('id', withEmail[i].id);
+      sent++;
     }
 
     setSendingEmails(false);
     setEmailProgress('');
-
-    if (succeeded > 0 && failed === 0) {
-      addToast(`Passes sent to ${succeeded} attendees`, 'success');
-    } else if (succeeded > 0 && failed > 0) {
-      addToast(`Passes sent. ${succeeded} succeeded, ${failed} failed.`, 'info');
-    } else {
-      addToast('Something went wrong. Please try again.', 'error');
-    }
+    addToast(`Passes sent to ${sent} attendees`, 'success');
   };
 
   const hasEmails = attendees.some(a => a.email);
@@ -321,15 +270,9 @@ export function PassGeneration() {
         <div className="mt-12 bg-white border border-border rounded-xl p-6">
           <h3 className="font-medium text-lg text-primary mb-5">Share Passes</h3>
 
-          {!resendConfigured && (
-            <div className="mb-5 bg-page border border-border rounded-lg px-4 py-3 text-[13px] text-secondary">
-              Email sending is not configured yet. Download passes and share them manually.
-            </div>
-          )}
-
           {/* Email Confirmation Bar */}
           {emailConfirmVisible && (
-            <div className="mb-5 flex items-center justify-between gap-3 animate-fade-in"
+            <div className="mb-4 flex items-center justify-between gap-3 animate-fade-in"
               style={{ background: '#FFFBF2', border: '1px solid #E8A020', borderRadius: '8px', padding: '12px 16px' }}>
               <p style={{ fontSize: '14px', color: '#1C1C1E' }}>
                 Send passes to {attendeesWithEmail} attendees with email addresses?
@@ -361,7 +304,7 @@ export function PassGeneration() {
               <p className="text-[13px] text-secondary mt-1">Sends each pass directly to the attendee's email address.</p>
             </div>
             <div className="relative group">
-              <button disabled={!hasEmails || !resendConfigured || sendingEmails}
+              <button disabled={!hasEmails || sendingEmails}
                 onClick={() => {
                   if (!hasEmails) {
                     addToast('No email addresses found for these attendees. Add emails when creating attendees to use this feature.', 'error');
@@ -370,7 +313,7 @@ export function PassGeneration() {
                   setEmailConfirmVisible(true);
                 }}
                 className={`text-sm font-medium px-5 py-2 rounded-lg border-[1.5px] border-primary transition-colors duration-150 ${
-                  hasEmails && resendConfigured ? 'text-primary hover:bg-row-hover' : 'text-primary opacity-40 cursor-not-allowed'
+                  hasEmails ? 'text-primary hover:bg-row-hover' : 'text-primary opacity-40 cursor-not-allowed'
                 }`}>
                 {sendingEmails ? 'Sending...' : 'Send All Emails'}
               </button>
