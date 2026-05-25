@@ -10,7 +10,7 @@ export function Landing() {
   return (
     <div className="bg-white min-h-screen">
       {/* Nav */}
-      <nav className="h-16 border-b border-border flex items-center justify-between px-6 md:px-10">
+      <nav className="flex items-center justify-between px-6 md:px-10" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: '#FFFFFF', borderBottom: '1px solid #E4E3DF', height: '64px' }}>
         <Logo color="#1C1C1E" size={24} />
         <div className="flex items-center gap-3">
           <button
@@ -29,7 +29,7 @@ export function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="bg-page pt-16 pb-16 md:pt-16 md:pb-24 px-6 md:px-10">
+      <section className="bg-page pb-16 md:pb-24 px-6 md:px-10" style={{ paddingTop: '128px' }}>
         <div className="max-w-3xl mx-auto text-center">
           <h1 className="font-serif-italic text-primary opacity-0 animate-stagger-1 text-4xl md:text-[56px]" style={{ lineHeight: 1.1 }}>
             Your event. Signed, sealed, delivered.
